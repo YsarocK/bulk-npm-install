@@ -65,7 +65,7 @@ class BulkInstall {
 
       if (lockFiles.length === 1) {
         const packageManager = lockFiles[0];
-        consola.info(`package.json trouvé dans ${folder}, exécution de ${packageManager} install...`);
+        consola.info(`Lock file trouvé dans ${folder}, exécution de ${packageManager} install...`);
         await this.runInstall(folder, packageManager);
       }
 
