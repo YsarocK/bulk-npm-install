@@ -1,6 +1,6 @@
 {
   "name": "bulk-npm-install",
-  "version": "0.1.3",
+  "version": "0.1.0",
   "description": "Execute npm install on multiple directories at once",
   "author": "Etienne Moureton",
   "main": "dist/main.js",
