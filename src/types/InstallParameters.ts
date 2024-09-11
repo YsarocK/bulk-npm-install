@@ -1,5 +1,4 @@
 interface InstallParameters {
-  packageManager?: string;
   parentFolder?: string;
 }
 

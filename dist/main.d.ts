@@ -2,12 +2,12 @@ import { InstallParameters } from "./types/index.js";
 interface BulkInstall {
     parentFolder: string;
     packageManager: string;
-    hasPackageJson(folderPath: string): boolean;
-    runInstall(folderPath: string): Promise<void>;
+    getLockFiles(folderPath: string): Array<string>;
+    runInstall(folderPath: string, packageManager: string): Promise<void>;
     iterateFolders(): Promise<void>;
     run(): Promise<void>;
 }
 declare class BulkInstall {
-    constructor({ packageManager, parentFolder }: InstallParameters);
+    constructor({ parentFolder }: InstallParameters);
 }
 export { BulkInstall };

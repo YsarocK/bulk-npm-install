@@ -4,16 +4,26 @@ import path from 'path';
 import { exec } from 'child_process';
 consola.wrapAll();
 class BulkInstall {
-    constructor({ packageManager = "npm", parentFolder = "./" }) {
-        this.packageManager = packageManager;
+    constructor({ parentFolder = "./" }) {
         this.parentFolder = parentFolder;
     }
-    hasPackageJson(folderPath) {
-        return fs.existsSync(path.join(folderPath, 'package.json'));
+    getLockFiles(folderPath) {
+        const LOCK_FILES = {
+            npm: fs.existsSync(path.join(folderPath, 'package-lock.json')),
+            yarn: fs.existsSync(path.join(folderPath, 'yarn.lock')),
+            pnpm: fs.existsSync(path.join(folderPath, 'pnpm-lock.yaml')),
+        };
+        const res = [];
+        for (const [key, value] of Object.entries(LOCK_FILES)) {
+            if (value) {
+                res.push(key);
+            }
+        }
+        return res;
     }
-    runInstall(folderPath) {
+    runInstall(folderPath, packageManager) {
         return new Promise((resolve, reject) => {
-            exec(`${this.packageManager} install`, { cwd: folderPath }, (error) => {
+            exec(`${packageManager} install`, { cwd: folderPath }, (error) => {
                 if (error) {
                     consola.error(`Erreur dans ${folderPath}:`, error);
                     return reject(error);
@@ -28,12 +38,17 @@ class BulkInstall {
             .filter(dirent => dirent.isDirectory())
             .map(dirent => path.join(this.parentFolder, dirent.name));
         for (const folder of subFolders) {
-            if (this.hasPackageJson(folder)) {
-                consola.info(`package.json trouvé dans ${folder}, exécution de ${this.packageManager} install...`);
-                await this.runInstall(folder);
+            const lockFiles = this.getLockFiles(folder);
+            if (lockFiles.length > 1) {
+                consola.warn(`Plusieurs lock files trouvés dans ${folder}, skip.`);
             }
-            else {
-                consola.warn(`Pas de package.json dans ${folder}, skip.`);
+            if (lockFiles.length === 1) {
+                const packageManager = lockFiles[0];
+                consola.info(`package.json trouvé dans ${folder}, exécution de ${packageManager} install...`);
+                await this.runInstall(folder, packageManager);
+            }
+            if (lockFiles.length === 0) {
+                consola.warn(`Aucun lock file trouvé dans ${folder}, skip.`);
             }
         }
     }
