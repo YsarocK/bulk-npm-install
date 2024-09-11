@@ -1,0 +1,7 @@
+node_modules
+/lib
+/coverage
+.env
+/types
+.DS_Store
+.idea
