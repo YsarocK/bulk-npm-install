@@ -13,7 +13,7 @@ class BulkInstall {
     }
     runInstall(folderPath) {
         return new Promise((resolve, reject) => {
-            exec(`${this.packageManager} install`, { cwd: folderPath }, (error, stdout, stderr) => {
+            exec(`${this.packageManager} install`, { cwd: folderPath }, (error) => {
                 if (error) {
                     consola.error(`Erreur dans ${folderPath}:`, error);
                     return reject(error);

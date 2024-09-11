@@ -6,10 +6,17 @@ import { exec } from 'child_process';
 
 consola.wrapAll();
 
-interface BulkInstall extends InstallParameters { }
+interface BulkInstall {
+  parentFolder: string;
+  packageManager: string;
+  hasPackageJson(folderPath: string): boolean;
+  runInstall(folderPath: string): Promise<void>;
+  iterateFolders(): Promise<void>;
+  run(): Promise<void>;
+}
 
 class BulkInstall {
-  constructor({ packageManager = "npm", parentFolder = "./" }) {
+  constructor({ packageManager = "npm", parentFolder = "./" }: InstallParameters) {
     this.packageManager = packageManager;
     this.parentFolder = parentFolder;
   }
@@ -20,7 +27,7 @@ class BulkInstall {
 
   runInstall(folderPath: string) {
     return new Promise<void>((resolve, reject) => {
-      exec(`${this.packageManager} install`, { cwd: folderPath }, (error, stdout, stderr) => {
+      exec(`${this.packageManager} install`, { cwd: folderPath }, (error) => {
         if (error) {
           consola.error(`Erreur dans ${folderPath}:`, error);
           return reject(error);
@@ -60,4 +67,4 @@ class BulkInstall {
 
 export {
   BulkInstall
-}
+};
