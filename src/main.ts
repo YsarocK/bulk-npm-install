@@ -46,10 +46,10 @@ class BulkInstall {
     return new Promise<void>((resolve, reject) => {
       exec(`${packageManager} install`, { cwd: folderPath }, (error) => {
         if (error) {
-          this.logger.error(`Erreur dans ${folderPath}:`, error);
+          this.logger.error(`Error in ${folderPath}:`, error);
           return reject(error);
         }
-        this.logger.success(`${packageManager} install exécuté avec succès dans ${folderPath}`);
+        this.logger.success(`${packageManager} install successfully executed in ${folderPath}`);
         resolve();
       });
     });
@@ -65,13 +65,13 @@ class BulkInstall {
       const lockFiles = this.getLockFiles(folder);
 
       if (lockFiles.length > 1) {
-        this.logger.warn(`Plusieurs lock files trouvés dans ${folder}, skip.`);
+        this.logger.warn(`Multiple lock files found in ${folder}, skipping.`);
         this.results.push(new Results(folder, 'unknown', ResultsStatus.SKIPPED));
       }
 
       if (lockFiles.length === 1) {
         const packageManager = lockFiles[0];
-        this.logger.start(`Lock file trouvé dans ${folder}, exécution de ${packageManager} install...`);
+        this.logger.start(`Lock file found in ${folder}, running ${packageManager} install...`);
         await this.runInstall(folder, packageManager)
           .then(() => this.results.push(new Results(folder, packageManager, ResultsStatus.SUCCESS)))
           .catch(() => this.results.push(new Results(folder, packageManager, ResultsStatus.FAILED)));
@@ -84,15 +84,14 @@ class BulkInstall {
   }
 
   async run() {
-    this.logger.start(`Démarrage de l'installation en bulk dans le dossier: ${this.parentFolder}`);
+    this.logger.start(`Starting bulk installation in folder: ${this.parentFolder}`);
 
     try {
       await this.iterateFolders(this.parentFolder);
-      this.logger.success('Tous les installs sont terminés.');
+      this.logger.success('All installations are completed.');
     } catch (error) {
-      this.logger.error('Erreur lors de l\'installation en bulk:', error);
+      this.logger.error('Error during bulk installation:', error);
     }
-
 
     // eslint-disable-next-line no-console
     console.table(this.results);
