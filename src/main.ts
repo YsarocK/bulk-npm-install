@@ -9,9 +9,9 @@ consola.wrapAll();
 interface BulkInstall {
   parentFolder: string;
   packageManager: string;
+  iterateFolders(): Promise<void>;
   getLockFiles(folderPath: string): Array<string>;
   runInstall(folderPath: string, packageManager: string): Promise<void>;
-  iterateFolders(): Promise<void>;
   run(): Promise<void>;
 }
 
@@ -82,7 +82,7 @@ class BulkInstall {
       await this.iterateFolders();
       consola.success('Tous les installs sont terminés.');
     } catch (error) {
-      consola.error('Erreur pendant l\'installation:', error);
+      throw new Error(error);
     }
   }
 }
