@@ -93,6 +93,8 @@ class BulkInstall {
       this.logger.error('Erreur lors de l\'installation en bulk:', error);
     }
 
+
+    // eslint-disable-next-line no-console
     console.table(this.results);
   }
 }
