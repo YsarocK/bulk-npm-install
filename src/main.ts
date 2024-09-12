@@ -1,23 +1,27 @@
-import consola from "consola";
-import { InstallParameters } from "./types/index.js";
+import { createConsola } from "consola";
+import { InstallParameters, ResultsStatus } from "./types/index.js";
 import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
-
-consola.wrapAll();
+import { Results } from "./utils/Results.js";
 
 interface BulkInstall {
   parentFolder: string;
-  packageManager: string;
-  iterateFolders(): Promise<void>;
+  recursive: boolean;
+  results: Array<Results>;
+  logger: ReturnType<typeof createConsola>;
+  iterateFolders(folderPath: string): Promise<void>;
   getLockFiles(folderPath: string): Array<string>;
   runInstall(folderPath: string, packageManager: string): Promise<void>;
   run(): Promise<void>;
 }
 
 class BulkInstall {
-  constructor({ parentFolder = "./" }: InstallParameters) {
+  constructor({ parentFolder = "./", recursive = false, logs = false }: InstallParameters) {
     this.parentFolder = parentFolder;
+    this.recursive = recursive;
+    this.results = [];
+    this.logger = logs ? createConsola() : createConsola({ level: -999 });
   }
 
   getLockFiles(folderPath: string) {
@@ -42,48 +46,54 @@ class BulkInstall {
     return new Promise<void>((resolve, reject) => {
       exec(`${packageManager} install`, { cwd: folderPath }, (error) => {
         if (error) {
-          consola.error(`Erreur dans ${folderPath}:`, error);
+          this.logger.error(`Erreur dans ${folderPath}:`, error);
           return reject(error);
         }
-        consola.success(`${this.packageManager} install exécuté avec succès dans ${folderPath}`);
+        this.logger.success(`${packageManager} install exécuté avec succès dans ${folderPath}`);
         resolve();
       });
     });
   }
 
-  async iterateFolders() {
-    const subFolders = fs.readdirSync(this.parentFolder, { withFileTypes: true })
+  async iterateFolders(folderPath: string) {
+    const subFolders = fs.readdirSync(folderPath, { withFileTypes: true })
       .filter(dirent => dirent.isDirectory())
-      .map(dirent => path.join(this.parentFolder, dirent.name));
+      .map(dirent => path.join(folderPath, dirent.name))
+      .filter(subFolder => !subFolder.includes('node_modules'));
 
     for (const folder of subFolders) {
       const lockFiles = this.getLockFiles(folder);
 
       if (lockFiles.length > 1) {
-        consola.warn(`Plusieurs lock files trouvés dans ${folder}, skip.`);
+        this.logger.warn(`Plusieurs lock files trouvés dans ${folder}, skip.`);
+        this.results.push(new Results(folder, 'unknown', ResultsStatus.SKIPPED));
       }
 
       if (lockFiles.length === 1) {
         const packageManager = lockFiles[0];
-        consola.info(`Lock file trouvé dans ${folder}, exécution de ${packageManager} install...`);
-        await this.runInstall(folder, packageManager);
+        this.logger.start(`Lock file trouvé dans ${folder}, exécution de ${packageManager} install...`);
+        await this.runInstall(folder, packageManager)
+          .then(() => this.results.push(new Results(folder, packageManager, ResultsStatus.SUCCESS)))
+          .catch(() => this.results.push(new Results(folder, packageManager, ResultsStatus.FAILED)));
       }
 
-      if (lockFiles.length === 0) {
-        consola.warn(`Aucun lock file trouvé dans ${folder}, skip.`);
+      if (this.recursive) {
+        await this.iterateFolders(folder);
       }
     }
   }
 
   async run() {
-    consola.start(`Démarrage de l'installation en bulk dans le dossier: ${this.parentFolder}`);
+    this.logger.start(`Démarrage de l'installation en bulk dans le dossier: ${this.parentFolder}`);
 
     try {
-      await this.iterateFolders();
-      consola.success('Tous les installs sont terminés.');
+      await this.iterateFolders(this.parentFolder);
+      this.logger.success('Tous les installs sont terminés.');
     } catch (error) {
-      throw new Error(error);
+      this.logger.error('Erreur lors de l\'installation en bulk:', error);
     }
+
+    console.table(this.results);
   }
 }
 

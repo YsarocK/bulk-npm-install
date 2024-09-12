@@ -1,2 +1,3 @@
 import { InstallParameters } from "./InstallParameters.js";
-export { InstallParameters };
+import { ResultsStatus } from "./ResultsStatus.js";
+export { InstallParameters, ResultsStatus };
